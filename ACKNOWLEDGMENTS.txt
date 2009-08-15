@@ -1,0 +1,13 @@
+ObjectiveEveryTrail: Acknowledgments
+
+The ObjectiveEveryTrail is based upon the ObjectiveFlickr project by Lukhnos D. Liu. All credit goes to him. Thanks a lot! [1]
+
+The class OFPOSTRequest is inspired by Ferdinand Svehla's code snippet [2]
+which uses CFReadStream instead of NSURLConnection to perform better 
+HTTP POST requests.
+
+NSString and NSData categories pertaining to Base64 encoding and decoding are Copyright (c) 2006 Dave Dribin [3]
+
+[1] http://code.google.com/p/objectiveflickr/
+[2] http://www.cocoabuilder.com/archive/message/cocoa/2006/8/30/170367
+[2] http://www.dribin.org/dave

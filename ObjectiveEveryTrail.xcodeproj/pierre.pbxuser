@@ -1,0 +1,155 @@
+// !$*UTF8*$!
+{
+	6A681FE71009F1AB009224E7 /* LFSiteReachability.h */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {1289, 949}}";
+			sepNavSelRange = "{1762, 0}";
+			sepNavVisRange = "{620, 2344}";
+			sepNavWindowFrame = "{{15, 4}, {1348, 874}}";
+		};
+	};
+	6A681FE81009F1AB009224E7 /* LFSiteReachability.m */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {847, 3705}}";
+			sepNavSelRange = "{7148, 0}";
+			sepNavVisRange = "{6183, 1710}";
+			sepNavWindowFrame = "{{15, 4}, {1348, 874}}";
+		};
+	};
+	6A8666480F9593B200325E1C /* ObjectiveEveryTrail (framework) */ = {
+		activeExec = 0;
+	};
+	6A8666A60F95956A00325E1C /* All */ = {
+		activeExec = 0;
+	};
+	6ABF72D10F939BB800B9179E /* Project object */ = {
+		activeBuildConfigurationName = Debug;
+		activeSDKPreference = macosx10.4;
+		activeTarget = 6A8666A60F95956A00325E1C /* All */;
+		addToTargets = (
+			6ABF72E50F939BE600B9179E /* ObjectiveEveryTrail (library) */,
+			6A8666480F9593B200325E1C /* ObjectiveEveryTrail (framework) */,
+			6A8666A60F95956A00325E1C /* All */,
+		);
+		codeSenseManager = 8F20B5C31035A47600587EA5 /* Code sense */;
+		perUserDictionary = {
+			PBXConfiguration.PBXFileTableDataSource3.PBXFileTableDataSource = {
+				PBXFileTableDataSourceColumnSortingDirectionKey = "-1";
+				PBXFileTableDataSourceColumnSortingKey = PBXFileDataSource_Filename_ColumnID;
+				PBXFileTableDataSourceColumnWidthsKey = (
+					20,
+					669,
+					20,
+					48,
+					43,
+					43,
+					20,
+				);
+				PBXFileTableDataSourceColumnsKey = (
+					PBXFileDataSource_FiletypeID,
+					PBXFileDataSource_Filename_ColumnID,
+					PBXFileDataSource_Built_ColumnID,
+					PBXFileDataSource_ObjectSize_ColumnID,
+					PBXFileDataSource_Errors_ColumnID,
+					PBXFileDataSource_Warnings_ColumnID,
+					PBXFileDataSource_Target_ColumnID,
+				);
+			};
+			PBXPerProjectTemplateStateSaveDate = 272021582;
+			PBXWorkspaceStateSaveDate = 272021582;
+		};
+		sourceControlManager = 8F20B5C21035A47600587EA5 /* Source Control */;
+		userBuildSettings = {
+		};
+	};
+	6ABF72E50F939BE600B9179E /* ObjectiveEveryTrail (library) */ = {
+		activeExec = 0;
+	};
+	6ADECA6A0F939F650024C352 /* LFHTTPRequest.h */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {847, 2262}}";
+			sepNavSelRange = "{2840, 0}";
+			sepNavVisRange = "{2191, 1798}";
+		};
+	};
+	6ADECA6B0F939F650024C352 /* LFHTTPRequest.m */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {847, 9711}}";
+			sepNavSelRange = "{21974, 0}";
+			sepNavVisRange = "{21564, 1316}";
+		};
+	};
+	6ADECBE40F93B8810024C352 /* ObjectiveEveryTrail.h */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {847, 755}}";
+			sepNavSelRange = "{1247, 0}";
+			sepNavVisRange = "{0, 1341}";
+			sepNavWindowFrame = "{{15, 4}, {1348, 874}}";
+		};
+	};
+	6ADECBE60F93B8810024C352 /* OEUtilities.h */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {1115, 1170}}";
+			sepNavSelRange = "{1239, 0}";
+			sepNavVisRange = "{3, 1723}";
+			sepNavWindowFrame = "{{15, 4}, {1348, 874}}";
+		};
+	};
+	6ADECBE70F93B8810024C352 /* OEXMLMapper.h */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {847, 755}}";
+			sepNavSelRange = "{822, 0}";
+			sepNavVisRange = "{0, 1943}";
+		};
+	};
+	6ADECBE80F93B8810024C352 /* OEXMLMapper.m */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {1115, 2210}}";
+			sepNavSelRange = "{7, 0}";
+			sepNavVisRange = "{0, 1591}";
+		};
+	};
+	8F20B5C21035A47600587EA5 /* Source Control */ = {
+		isa = PBXSourceControlManager;
+		fallbackIsa = XCSourceControlManager;
+		isSCMEnabled = 0;
+		scmConfiguration = {
+			repositoryNamesForRoots = {
+				"" = "";
+			};
+		};
+	};
+	8F20B5C31035A47600587EA5 /* Code sense */ = {
+		isa = PBXCodeSenseManager;
+		indexTemplatePath = "";
+	};
+	8FC01F2E1036B88F0065F0FC /* OEEveryTrailAPIContext.h */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {1115, 1261}}";
+			sepNavSelRange = "{1458, 0}";
+			sepNavVisRange = "{1550, 1395}";
+		};
+	};
+	8FC01F2F1036B88F0065F0FC /* OEEveryTrailAPIContext.m */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {847, 3107}}";
+			sepNavSelRange = "{4069, 12}";
+			sepNavVisRange = "{3134, 1515}";
+		};
+	};
+	8FC01F341036B9510065F0FC /* OEEveryTrailAPIRequest.h */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {904, 1742}}";
+			sepNavSelRange = "{3150, 0}";
+			sepNavVisRange = "{2574, 740}";
+		};
+	};
+	8FC01F351036B9510065F0FC /* OEEveryTrailAPIRequest.m */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {904, 7605}}";
+			sepNavSelRange = "{9363, 0}";
+			sepNavVisRange = "{8664, 1026}";
+			sepNavWindowFrame = "{{15, 4}, {1348, 874}}";
+		};
+	};
+}
