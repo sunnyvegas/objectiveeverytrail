@@ -48,6 +48,7 @@ extern NSString *const OEEveryTrailFullSize;
 	
     NSString *userName;
     NSString *password;
+	NSString *userId;
     
     NSString *apiEndpoint;
 	NSString *authEndpoint;
@@ -60,6 +61,9 @@ extern NSString *const OEEveryTrailFullSize;
 
 - (void)setPassword:(NSString *)inPassword;
 - (NSString *)password;
+
+- (void)setUserId:(NSString *)inUserId;
+- (NSString *)userId;
 
 // URL provisioning
 - (NSURL *)photoSourceURLFromDictionary:(NSDictionary *)inDictionary size:(NSString *)inSizeModifier;
@@ -85,6 +89,14 @@ extern NSString *const OEEveryTrailFullSize;
 - (void)enableBasicAuthentication:(LFHTTPRequest*)inHttpRequest;
 
 - (BOOL)requestUserId:(id<OEEveryTrailAPIUserIdConsumer>)inUserIdConsumer;
+
+- (NSArray *)signedArgumentComponentsFromArguments:(NSDictionary *)inArguments
+									  useURIEscape:(BOOL)inUseEscape
+									authentication:(BOOL)inAuthentication
+											 error:(NSError**)error;
+- (NSString *)signedQueryFromArguments:(NSDictionary *)inArguments
+						authentication:(BOOL)inAuthentication
+								 error:(NSError**)error;
 
 @end
 

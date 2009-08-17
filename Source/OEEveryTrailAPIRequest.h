@@ -82,7 +82,6 @@ typedef id OEEveryTrailAPIRequestDelegateType;
     
     NSString *uploadTempFilename;
 
-	NSString *userId;
 	NSInvocation *invocation;
 }
 
