@@ -55,6 +55,7 @@ NSString *const OEEveryTrailFullSize		= @"fullsize";
 
 	[userName release], userName = nil;
     [password release], password = nil;
+ 	[userId release], userId = nil;
 
     [apiEndpoint release], apiEndpoint = nil;
 	[authEndpoint release], authEndpoint = nil;
@@ -105,6 +106,18 @@ NSString *const OEEveryTrailFullSize		= @"fullsize";
     return password;
 }
 
+- (void)setUserId:(NSString *)inUserId
+{
+    NSString *tmp = userId;
+    userId = [inUserId copy];
+    [tmp release];
+}
+
+- (NSString *)userId
+{
+    return userId;
+}
+
 - (NSURL *)photoSourceURLFromDictionary:(NSDictionary *)inDictionary size:(NSString *)inSizeModifier
 {
 	NSDictionary *urls = [inDictionary valueForKeyPath:@"photo.urls"];
@@ -142,6 +155,7 @@ NSString *const OEEveryTrailFullSize		= @"fullsize";
 @synthesize secret;
 @synthesize userName;
 @synthesize password;
+@synthesize userId;
 #endif
 
 - (void)enableBasicAuthentication:(LFHTTPRequest*)inHttpRequest
@@ -155,22 +169,74 @@ NSString *const OEEveryTrailFullSize		= @"fullsize";
 	[inHttpRequest setRequestHeader:requestHeader];
 }
 
+- (NSArray *)signedArgumentComponentsFromArguments:(NSDictionary *)inArguments
+									  useURIEscape:(BOOL)inUseEscape
+									authentication:(BOOL)inAuthentication
+											 error:(NSError**)error
+{
+	NSMutableDictionary *newArgs = [NSMutableDictionary dictionaryWithDictionary:inArguments];
+	
+	if (inAuthentication) {
+		if ((userName != nil) && (password != nil)) {
+			[newArgs setObject:userName forKey:@"username"];
+			[newArgs setObject:password forKey:@"password"];
+			
+			if (userId != nil) {
+				[newArgs setObject:userId forKey:@"uid"];
+			}
+		}
+		else if (error != nil) {
+			*error = [NSError errorWithDomain:OEEveryTrailAPIRequestErrorDomain
+										 code:OEEveryTrailAPIRequestAuthenticationError
+									 userInfo:[NSDictionary dictionaryWithObjectsAndKeys:@"Missing user name or password", NSLocalizedFailureReasonErrorKey, nil]];
+		}
+	}
+	
+	NSMutableArray *argArray = [NSMutableArray array];
+	NSArray *sortedArgs = [[newArgs allKeys] sortedArrayUsingSelector:@selector(compare:)];
+	NSEnumerator *argEnumerator = [sortedArgs objectEnumerator];
+	
+	NSString *nextKey;
+	while (nextKey = [argEnumerator nextObject]) {
+		NSString *value = [newArgs objectForKey:nextKey];
+		
+		[argArray addObject:[NSArray arrayWithObjects:nextKey, (inUseEscape ? OEEscapedURLStringFromNSString(value) : value), nil]];
+	}
+	
+	return argArray;
+}
+
+- (NSString *)signedQueryFromArguments:(NSDictionary *)inArguments authentication:(BOOL)inAuthentication error:(NSError**)error
+{
+    NSArray *argComponents = [self signedArgumentComponentsFromArguments:inArguments useURIEscape:YES authentication:inAuthentication error:error];
+	NSMutableArray *args = [NSMutableArray array];
+    NSEnumerator *componentEnumerator = [argComponents objectEnumerator];
+    NSArray *nextArg;
+    while (nextArg = [componentEnumerator nextObject]) {
+        [args addObject:[nextArg componentsJoinedByString:@"="]];
+    }
+    
+    return [args componentsJoinedByString:@"&"];
+}
+
 - (BOOL)requestUserId:(id<OEEveryTrailAPIUserIdConsumer>)inUserIdConsumer
 {
     if ([httpRequest isRunning]) {
         return NO;
     }
     
+	NSError *error = nil;
+	NSString *arguments = [self signedQueryFromArguments:[NSDictionary dictionary]
+										  authentication:YES
+												   error:&error];
+    
+	if (error != nil) {
+		[inUserIdConsumer context:self failedToProvideUserIdWithError:error];
+		
+		return NO;
+	}
+	
 	[httpRequest setSessionInfo:inUserIdConsumer];
-	
-	NSMutableString *arguments = [NSMutableString string];
-	
-	[arguments appendFormat:@"password=%@", OEEscapedURLStringFromNSString(self.password)];
-	[arguments appendString:@"&"];
-	[arguments appendFormat:@"username=%@", OEEscapedURLStringFromNSString(self.userName)];
-	
-	NSLog(@"%@", arguments);
-
 	[self enableBasicAuthentication:httpRequest];
 
 	return [httpRequest performMethod:LFHTTPRequestPOSTMethod

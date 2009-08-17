@@ -38,17 +38,10 @@ NSString *const OEEveryTrailAPIRequestErrorDomain = @"com.houdah.ObjectiveEveryT
 
 @interface OEEveryTrailAPIRequest (PrivateMethods) <OEEveryTrailAPIUserIdConsumer>
 
-- (NSArray *)signedArgumentComponentsFromArguments:(NSDictionary *)inArguments
-									  useURIEscape:(BOOL)inUseEscape
-									authentication:(BOOL)inAuthentication
-											 error:(NSError**)error;
-- (NSString *)signedQueryFromArguments:(NSDictionary *)inArguments
-						authentication:(BOOL)inAuthentication
-								 error:(NSError**)error;
-
 - (void)cleanUpTempFile;
 
 @end            
+
 
 @implementation OEEveryTrailAPIRequest
 
@@ -60,7 +53,6 @@ NSString *const OEEveryTrailAPIRequestErrorDomain = @"com.houdah.ObjectiveEveryT
     [httpRequest release], httpRequest = nil;
     [sessionInfo release], sessionInfo = nil;
     
- 	[userId release], userId = nil;
     [invocation release], invocation = nil;
 
 	[self cleanUpTempFile];
@@ -147,7 +139,7 @@ NSString *const OEEveryTrailAPIRequestErrorDomain = @"com.houdah.ObjectiveEveryT
 		return;
     }
     
-	if (inAuthentication  && (userId == nil)) {
+	if (inAuthentication  && ([context userId] == nil)) {
 		SEL mySelector = @selector(callAPIMethodWithGET:inDomain:arguments:authentication:);
 		NSMethodSignature *mySignature = [[self class] instanceMethodSignatureForSelector:mySelector];
 		NSInvocation *myInvocation = [NSInvocation invocationWithMethodSignature:mySignature];
@@ -173,9 +165,9 @@ NSString *const OEEveryTrailAPIRequestErrorDomain = @"com.houdah.ObjectiveEveryT
 	NSMutableDictionary *newArgs = inArguments ? [NSMutableDictionary dictionaryWithDictionary:inArguments] : [NSMutableDictionary dictionary];
 	
 	NSError *error = nil;
-	NSString *query = [self signedQueryFromArguments:newArgs
-									  authentication:inAuthentication
-											   error:&error];
+	NSString *query = [[self context] signedQueryFromArguments:newArgs
+												authentication:inAuthentication
+														 error:&error];
 	
 	if (error != nil) {
 		if ([delegate respondsToSelector:@selector(everyTrailAPIRequest:didFailWithError:)]) {
@@ -226,7 +218,7 @@ NSString *const OEEveryTrailAPIRequestErrorDomain = @"com.houdah.ObjectiveEveryT
 		return;
     }
     
-	if (inAuthentication && (userId == nil)) {
+	if (inAuthentication && ([context userId] == nil)) {
 		SEL mySelector = @selector(callAPIMethodWithPOST:inDomain:arguments:authentication:);
 		NSMethodSignature *mySignature = [[self class] instanceMethodSignatureForSelector:mySelector];
 		NSInvocation *myInvocation = [NSInvocation invocationWithMethodSignature:mySignature];
@@ -251,7 +243,9 @@ NSString *const OEEveryTrailAPIRequestErrorDomain = @"com.houdah.ObjectiveEveryT
 	NSMutableDictionary *newArgs = inArguments ? [NSMutableDictionary dictionaryWithDictionary:inArguments] : [NSMutableDictionary dictionary];
 	
 	NSError *error = nil;
-	NSString *arguments = [self signedQueryFromArguments:newArgs authentication:inAuthentication error:&error];
+	NSString *arguments = [[self context] signedQueryFromArguments:newArgs
+													authentication:inAuthentication
+															 error:&error];
     
 	if (error != nil) {
 		if ([delegate respondsToSelector:@selector(everyTrailAPIRequest:didFailWithError:)]) {
@@ -261,8 +255,6 @@ NSString *const OEEveryTrailAPIRequestErrorDomain = @"com.houdah.ObjectiveEveryT
 		return;
 	}
 	
-	NSLog(@"arguments: %@", arguments);
-
 	NSData *postData = [arguments dataUsingEncoding:NSUTF8StringEncoding];
 	NSString *urlString = [NSString stringWithFormat:@"%@/%@/%@",
 						   [context apiEndpoint], inDomainName,inMethodName];
@@ -302,7 +294,7 @@ NSString *const OEEveryTrailAPIRequestErrorDomain = @"com.houdah.ObjectiveEveryT
 		return;
     }
     
-	if (userId == nil) {
+	if ([context userId] == nil) {
 		SEL mySelector = @selector(uploadJPEGImageStream:suggestedFilename:arguments:);
 		NSMethodSignature *mySignature = [[self class] instanceMethodSignatureForSelector:mySelector];
 		NSInvocation *myInvocation = [NSInvocation invocationWithMethodSignature:mySignature];
@@ -323,10 +315,10 @@ NSString *const OEEveryTrailAPIRequestErrorDomain = @"com.houdah.ObjectiveEveryT
 	
     // get the api_sig
 	NSError *error = nil;
-    NSArray *argComponents = [self signedArgumentComponentsFromArguments:(inArguments ? inArguments : [NSDictionary dictionary]) 
-															useURIEscape:NO 
-														  authentication:YES
-																   error:&error];
+    NSArray *argComponents = [[self context] signedArgumentComponentsFromArguments:(inArguments ? inArguments : [NSDictionary dictionary]) 
+																	  useURIEscape:NO 
+																	authentication:YES
+																			 error:&error];
 	
 	if (error != nil) {
 		if ([delegate respondsToSelector:@selector(everyTrailAPIRequest:didFailWithError:)]) {
@@ -543,62 +535,9 @@ NSString *const OEEveryTrailAPIRequestErrorDomain = @"com.houdah.ObjectiveEveryT
     }
 }
 
-- (NSArray *)signedArgumentComponentsFromArguments:(NSDictionary *)inArguments
-									  useURIEscape:(BOOL)inUseEscape
-									authentication:(BOOL)inAuthentication
-											 error:(NSError**)error
-{
-	NSMutableDictionary *newArgs = [NSMutableDictionary dictionaryWithDictionary:inArguments];
-	
-	if (inAuthentication) {
-		NSString *userName = [context userName];
-		NSString *password = [context password];
-		
-		if ((userName != nil) && (password != nil)) {
-			[newArgs setObject:userName forKey:@"username"];
-			[newArgs setObject:password forKey:@"password"];
-
-			if (userId != nil) {
-				[newArgs setObject:userId forKey:@"uid"];
-			}
-		}
-		else if (error != nil) {
-			*error = [NSError errorWithDomain:OEEveryTrailAPIRequestErrorDomain
-										 code:OEEveryTrailAPIRequestAuthenticationError
-									 userInfo:[NSDictionary dictionaryWithObjectsAndKeys:@"Missing user name or password", NSLocalizedFailureReasonErrorKey, nil]];
-		}
-	}
-	
-	NSMutableArray *argArray = [NSMutableArray array];
-	NSArray *sortedArgs = [[newArgs allKeys] sortedArrayUsingSelector:@selector(compare:)];
-	NSEnumerator *argEnumerator = [sortedArgs objectEnumerator];
-	
-	NSString *nextKey;
-	while (nextKey = [argEnumerator nextObject]) {
-		NSString *value = [newArgs objectForKey:nextKey];
-		
-		[argArray addObject:[NSArray arrayWithObjects:nextKey, (inUseEscape ? OEEscapedURLStringFromNSString(value) : value), nil]];
-	}
-	
-	return argArray;
-}
-
-- (NSString *)signedQueryFromArguments:(NSDictionary *)inArguments authentication:(BOOL)inAuthentication error:(NSError**)error
-{
-    NSArray *argComponents = [self signedArgumentComponentsFromArguments:inArguments useURIEscape:YES authentication:inAuthentication error:error];
-	NSMutableArray *args = [NSMutableArray array];
-    NSEnumerator *componentEnumerator = [argComponents objectEnumerator];
-    NSArray *nextArg;
-    while (nextArg = [componentEnumerator nextObject]) {
-        [args addObject:[nextArg componentsJoinedByString:@"="]];
-    }
-    
-    return [args componentsJoinedByString:@"&"];
-}
-
 - (void)context:(OEEveryTrailAPIContext*)inContext providesUserId:(NSString*)inUserId;
 {
-	[userId release], userId = [inUserId copy];
+	[context setUserId:inUserId];
 	
 	if (invocation != nil) {
 		NSInvocation *myInvocation = [invocation retain];
@@ -612,7 +551,7 @@ NSString *const OEEveryTrailAPIRequestErrorDomain = @"com.houdah.ObjectiveEveryT
 
 - (void)context:(OEEveryTrailAPIContext*)inContext failedToProvideUserIdWithError:(NSError*)inError;
 {
-	[userId release], userId = nil;
+	[context setUserId:nil];
 	[invocation release], invocation = nil;
 	
 	if ([delegate respondsToSelector:@selector(everyTrailAPIRequest:didFailWithError:)]) {
