@@ -42,7 +42,7 @@ NSString *const OEEveryTrailFullSize		= @"fullsize";
 @end
 
 
-#define kDefaultEveryTrailRESTAPIEndpoint		@"http://test.everytrail.com/api"
+#define kDefaultEveryTrailRESTAPIEndpoint		@"http://www.everytrail.com/api"
 #define kDefaultEveryTrailAuthEndpoint			@"http://www.everytrail.com/api/user/login"
 
 
@@ -149,7 +149,7 @@ NSString *const OEEveryTrailFullSize		= @"fullsize";
 	NSMutableDictionary *requestHeader = [NSMutableDictionary dictionaryWithDictionary:[inHttpRequest requestHeader]];
 	NSString *authString = [NSString stringWithFormat:@"%@:%@", key, secret];
 	NSData *authData = [authString dataUsingEncoding:NSUTF8StringEncoding];
-	NSString *authHeader = [NSString stringWithFormat:@"Basic %@", [authData encodeBase64]];
+	NSString *authHeader = [NSString stringWithFormat:@"Basic %@", [authData encodeBase64WithNewlines:NO]];
 	
 	[requestHeader setObject:authHeader forKey:@"Authorization"];
 	[inHttpRequest setRequestHeader:requestHeader];
@@ -165,10 +165,12 @@ NSString *const OEEveryTrailFullSize		= @"fullsize";
 	
 	NSMutableString *arguments = [NSMutableString string];
 	
-	[arguments appendFormat:@"username=%@", self.userName];
+	[arguments appendFormat:@"password=%@", OEEscapedURLStringFromNSString(self.password)];
 	[arguments appendString:@"&"];
-	[arguments appendFormat:@"password=%@", self.password];
-			
+	[arguments appendFormat:@"username=%@", OEEscapedURLStringFromNSString(self.userName)];
+	
+	NSLog(@"%@", arguments);
+
 	[self enableBasicAuthentication:httpRequest];
 
 	return [httpRequest performMethod:LFHTTPRequestPOSTMethod
@@ -182,29 +184,63 @@ NSString *const OEEveryTrailFullSize		= @"fullsize";
 
 - (void)httpRequestDidComplete:(LFHTTPRequest *)request
 {
-	NSData *data = [request receivedData];
-	NSDictionary *response = [OEXMLMapper dictionaryMappedFromXMLData:data];
-	NSString *userIdString = [response objectForKey:@"user"];
-	
 	id<OEEveryTrailAPIUserIdConsumer> userIdConsumer = [request sessionInfo];
 
+	NSLog(@"%@", [[[NSString alloc] initWithData:[request receivedData] encoding:NSUTF8StringEncoding] autorelease]);
+	
+	NSDictionary *responseDictionary = [OEXMLMapper dictionaryMappedFromXMLData:[request receivedData]];	
+	NSArray *errorsElement = [responseDictionary valueForKeyPath:@"errors"];
+	
+	if (([responseDictionary count] == 0) || ([errorsElement count] > 0)) {
+		NSError *error = nil;
+		
+		if ([responseDictionary count] > 0) {
+			NSArray *errors = [responseDictionary valueForKeyPath:@"errors.error._text"];
+			NSString *message = NSLocalizedString(@"Unknown EveryTrail error",
+												  @"Unknown EveryTrail error");
+			int errorCode = OEEveryTrailAPIRequestUnknownError;
+			
+			if ([errors count] > 0) {
+				NSString *errorString = [errors objectAtIndex:0];
+				int errorValue = [errorString intValue];
+				
+				if ((errorValue != 0) && (errorValue != INT_MIN) && (errorValue != INT_MAX)) {
+					errorCode = errorValue;
+				}
+			}
+			
+			if (errorCode == 11) {
+				message = NSLocalizedString(@"Incorrect user name or password",
+											@"Incorrect user name or password");
+			}
+			
+			error = [NSError errorWithDomain:OEEveryTrailAPIReturnedErrorDomain
+										code:errorCode
+									userInfo:[NSDictionary dictionaryWithObjectsAndKeys:message, NSLocalizedFailureReasonErrorKey, nil]];				
+		}
+		
+		if (error == nil) {
+			error = [NSError errorWithDomain:OEEveryTrailAPIRequestErrorDomain
+										code:OEEveryTrailAPIRequestFaultyXMLResponseError
+									userInfo:nil];
+		}
+		
+		[userIdConsumer context:self failedToProvideUserIdWithError:error];
+		
+		return;
+	}
+
+	NSString *userIdString = [responseDictionary objectForKey:@"user"];
+	
 	if (userIdString != nil) {
 		[userIdConsumer context:self providesUserId:userIdString];
 	}
 	else {
-		NSArray *errors = [response valueForKeyPath:@"errors.error"];
-		NSString *errorString = nil;
-		
-		if ([errors count] > 0) {
-			errorString = [errors objectAtIndex:0];
-		}
-		else {
-			errorString = NSLocalizedString(@"Failure to acquire user ID", @"Failure to acquire user ID");
-		}
-		
+		NSString *message = NSLocalizedString(@"Failure to acquire user ID", @"Failure to acquire user ID");
+
 		NSError *error = [NSError errorWithDomain:OEEveryTrailAPIRequestErrorDomain
-											 code:OEEveryTrailAPIRequestConnectionError
-										 userInfo:[NSDictionary dictionaryWithObjectsAndKeys:errorString, NSLocalizedFailureReasonErrorKey, nil]];
+											 code:OEEveryTrailAPIRequestFaultyXMLResponseError
+										 userInfo:[NSDictionary dictionaryWithObjectsAndKeys:message, NSLocalizedFailureReasonErrorKey, nil]];
 		
 		[userIdConsumer context:self failedToProvideUserIdWithError:error];
 	}

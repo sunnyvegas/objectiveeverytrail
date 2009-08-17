@@ -111,10 +111,9 @@ typedef id OEEveryTrailAPIRequestDelegateType;
 			   authentication:(BOOL)inAuthentication;
 
 // image upload—we use NSInputStream here because we want to have flexibity; with this you can upload either a file or NSData from NSImage
-- (void)uploadImageStream:(NSInputStream *)inImageStream
-		suggestedFilename:(NSString *)inFilename
-				 MIMEType:(NSString *)inType
-				arguments:(NSDictionary *)inArguments;
+- (void)uploadJPEGImageStream:(NSInputStream *)inImageStream
+			suggestedFilename:(NSString *)inFilename
+					arguments:(NSDictionary *)inArguments;
 
 #if MAC_OS_X_VERSION_MIN_REQUIRED > MAC_OS_X_VERSION_10_4
 @property (nonatomic, readonly) OEEveryTrailAPIContext *context;
