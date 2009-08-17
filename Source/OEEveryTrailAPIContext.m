@@ -204,6 +204,10 @@ NSString *const OEEveryTrailFullSize		= @"fullsize";
 	while (nextKey = [argEnumerator nextObject]) {
 		NSString *value = [newArgs objectForKey:nextKey];
 		
+		if ([@"$uid" isEqual:value]) {
+			value = userId;
+		}
+		
 		[argArray addObject:[NSArray arrayWithObjects:nextKey, (inUseEscape ? OEEscapedURLStringFromNSString(value) : value), nil]];
 	}
 	
