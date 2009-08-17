@@ -87,6 +87,8 @@ NSString *const OEEveryTrailFullSize		= @"fullsize";
     NSString *tmp = userName;
     userName = [inUserName copy];
     [tmp release];
+
+	[self setUserId:nil];
 }
 
 - (NSString *)userName
@@ -99,6 +101,8 @@ NSString *const OEEveryTrailFullSize		= @"fullsize";
     NSString *tmp = password;
     password = [inPassword copy];
     [tmp release];
+	
+	[self setUserId:nil];
 }
 
 - (NSString *)password
@@ -236,6 +240,7 @@ NSString *const OEEveryTrailFullSize		= @"fullsize";
 		return NO;
 	}
 	
+	[httpRequest setContentType:LFHTTPRequestWWWFormURLEncodedContentType];
 	[httpRequest setSessionInfo:inUserIdConsumer];
 	[self enableBasicAuthentication:httpRequest];
 
@@ -252,7 +257,7 @@ NSString *const OEEveryTrailFullSize		= @"fullsize";
 {
 	id<OEEveryTrailAPIUserIdConsumer> userIdConsumer = [request sessionInfo];
 
-	NSLog(@"%@", [[[NSString alloc] initWithData:[request receivedData] encoding:NSUTF8StringEncoding] autorelease]);
+//	NSLog(@"%@", [[[NSString alloc] initWithData:[request receivedData] encoding:NSUTF8StringEncoding] autorelease]);
 	
 	NSDictionary *responseDictionary = [OEXMLMapper dictionaryMappedFromXMLData:[request receivedData]];	
 	NSArray *errorsElement = [responseDictionary valueForKeyPath:@"errors"];
@@ -296,9 +301,9 @@ NSString *const OEEveryTrailFullSize		= @"fullsize";
 		return;
 	}
 
-	NSString *userIdString = [responseDictionary objectForKey:@"user"];
+	NSString *userIdString = [responseDictionary valueForKeyPath:@"user._text"];
 	
-	if (userIdString != nil) {
+	if ([userIdString isKindOfClass:[NSString class]]) {
 		[userIdConsumer context:self providesUserId:userIdString];
 	}
 	else {
