@@ -42,8 +42,8 @@ NSString *const OEEveryTrailFullSize		= @"fullsize";
 @end
 
 
-#define kDefaultEveryTrailRESTAPIEndpoint		@"http://www.everytrail.com/api"
-#define kDefaultEveryTrailAuthEndpoint			@"http://www.everytrail.com/api/user/login"
+#define kDefaultEveryTrailRESTAPIEndpoint		@"http://test.everytrail.com/api"
+#define kDefaultEveryTrailAuthEndpoint			@"http://test.everytrail.com/api/user/login"
 
 
 @implementation OEEveryTrailAPIContext
@@ -170,6 +170,7 @@ NSString *const OEEveryTrailFullSize		= @"fullsize";
 	NSString *authHeader = [NSString stringWithFormat:@"Basic %@", [authData encodeBase64WithNewlines:NO]];
 	
 	[requestHeader setObject:authHeader forKey:@"Authorization"];
+	[requestHeader setObject:@"3" forKey:@"Api-Version"];
 	[inHttpRequest setRequestHeader:requestHeader];
 }
 
@@ -260,52 +261,18 @@ NSString *const OEEveryTrailFullSize		= @"fullsize";
 - (void)httpRequestDidComplete:(LFHTTPRequest *)request
 {
 	id<OEEveryTrailAPIUserIdConsumer> userIdConsumer = [request sessionInfo];
-
-//	NSLog(@"%@", [[[NSString alloc] initWithData:[request receivedData] encoding:NSUTF8StringEncoding] autorelease]);
+	NSDictionary *responseDictionary = [OEXMLMapper dictionaryMappedFromXMLData:[request receivedData]];
+	NSDictionary *rootElement = (NSDictionary*)[responseDictionary oeRootElement];
 	
-	NSDictionary *responseDictionary = [OEXMLMapper dictionaryMappedFromXMLData:[request receivedData]];	
-	NSArray *errorsElement = [responseDictionary valueForKeyPath:@"errors"];
+	NSError *error = nil;
 	
-	if (([responseDictionary count] == 0) || ([errorsElement count] > 0)) {
-		NSError *error = nil;
-		
-		if ([responseDictionary count] > 0) {
-			NSArray *errors = [responseDictionary valueForKeyPath:@"errors.error._text"];
-			NSString *message = NSLocalizedString(@"Unknown EveryTrail error",
-												  @"Unknown EveryTrail error");
-			int errorCode = OEEveryTrailAPIRequestUnknownError;
-			
-			if ([errors count] > 0) {
-				NSString *errorString = [errors objectAtIndex:0];
-				int errorValue = [errorString intValue];
-				
-				if ((errorValue != 0) && (errorValue != INT_MIN) && (errorValue != INT_MAX)) {
-					errorCode = errorValue;
-				}
-			}
-			
-			if (errorCode == 11) {
-				message = NSLocalizedString(@"Incorrect user name or password",
-											@"Incorrect user name or password");
-			}
-			
-			error = [NSError errorWithDomain:OEEveryTrailAPIReturnedErrorDomain
-										code:errorCode
-									userInfo:[NSDictionary dictionaryWithObjectsAndKeys:message, NSLocalizedFailureReasonErrorKey, nil]];				
-		}
-		
-		if (error == nil) {
-			error = [NSError errorWithDomain:OEEveryTrailAPIRequestErrorDomain
-										code:OEEveryTrailAPIRequestFaultyXMLResponseError
-									userInfo:nil];
-		}
-		
+	if ([rootElement oeRootHasError:&error]) {
 		[userIdConsumer context:self failedToProvideUserIdWithError:error];
 		
 		return;
 	}
-
-	NSString *userIdString = [responseDictionary valueForKeyPath:@"user._text"];
+	
+	NSString *userIdString = [rootElement valueForKeyPath:@"userID._text"];
 	
 	if ([userIdString isKindOfClass:[NSString class]]) {
 		[userIdConsumer context:self providesUserId:userIdString];

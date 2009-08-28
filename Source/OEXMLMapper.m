@@ -28,11 +28,14 @@
 
 #import "OEXMLMapper.h"
 
+#import "OEEveryTrailAPIRequest.h"
+
 NSString *OEXMLMapperExceptionName = @"OEXMLMapperException";
 NSString *OEXMLAttributesKey = @"_attributes";
 NSString *OEXMLTextContentKey = @"_text";
 
 @implementation OEXMLMapper
+
 - (void)dealloc
 {
     [resultantDictionary release];
@@ -146,21 +149,23 @@ NSString *OEXMLTextContentKey = @"_text";
 	[resultantDictionary release];
 	resultantDictionary = nil;
 }
+
 @end
+
 
 @implementation NSDictionary (OEXMLMapperExtension)
 
-- (NSDictionary *)attributes
+- (NSDictionary *)oeAttributes
 {
     return [self objectForKey:OEXMLAttributesKey];
 }
 
-- (NSString *)textContent
+- (NSString *)oeTextContent
 {
     return [self objectForKey:OEXMLTextContentKey];
 }
 
-- (NSObject *)rootElement
+- (NSObject *)oeRootElement
 {
 	if ([self count] == 1) {
 		NSObject *key = [[self allKeys] objectAtIndex:0];
@@ -170,5 +175,56 @@ NSString *OEXMLTextContentKey = @"_text";
 	
 	return nil;
 }
+
+- (BOOL)oeRootHasError:(NSError**)outError
+{
+	NSDictionary *attributes = [self oeAttributes];
+	NSString *status = [attributes objectForKey:@"status"];
+	
+	// this also fails when responseDictionary == nil, so it's a guranteed way of checking the result
+	if (![status isEqualToString:@"success"]) {
+		NSObject *error = [self valueForKeyPath:@"errors.error"];
+		
+		if ([error isKindOfClass:[NSArray class]]) {
+			// Only handle the first error
+			NSArray *errorArray = (NSArray*)error;
+			
+			if ([errorArray count] > 0) {
+				error = [errorArray objectAtIndex:0];
+			}
+			else {
+				error = nil;
+			}
+		}
+		
+		NSString *code = [error valueForKeyPath:@"code._text"];
+		NSString *msg = [error valueForKeyPath:@"message._text"];
+		NSError *toDelegateError = nil;
+		
+		if ([code length]) {
+			NSDictionary *userInfo =
+			[msg length] ?
+			[NSDictionary dictionaryWithObjectsAndKeys:msg, NSLocalizedFailureReasonErrorKey, nil] :
+			nil;
+			
+			toDelegateError = [NSError errorWithDomain:OEEveryTrailAPIReturnedErrorDomain
+												  code:[code intValue]
+											  userInfo:userInfo];				
+		}
+		else {
+			toDelegateError = [NSError errorWithDomain:OEEveryTrailAPIReturnedErrorDomain
+												  code:OEEveryTrailAPIRequestFaultyXMLResponseError
+											  userInfo:nil];
+		}
+		
+		if ((toDelegateError != nil) && (*outError != nil)) {
+			*outError = toDelegateError;
+		}
+				
+		return YES;
+	}
+	
+	return NO;
+}	
 
 @end
