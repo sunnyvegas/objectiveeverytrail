@@ -100,12 +100,12 @@ typedef id OEEveryTrailAPIRequestDelegateType;
 - (void)cancel;
 
 // elementary methods
-- (void)callAPIMethodWithGET:(NSString *)inMethodName
-					inDomain:(NSString *)inDomainName
+- (void)callAPIActionWithGET:(NSString *)inMethodName
+				  controller:(NSString *)inDomainName
 				   arguments:(NSDictionary *)inArguments
 			  authentication:(BOOL)inAuthentication;
-- (void)callAPIMethodWithPOST:(NSString *)inMethodName
-					 inDomain:(NSString *)inDomainName
+- (void)callAPIActionWithPOST:(NSString *)inMethodName
+				   controller:(NSString *)inDomainName
 					arguments:(NSDictionary *)inArguments
 			   authentication:(BOOL)inAuthentication;
 

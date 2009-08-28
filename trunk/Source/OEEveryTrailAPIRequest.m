@@ -122,8 +122,8 @@ NSString *const OEEveryTrailAPIRequestErrorDomain = @"com.houdah.ObjectiveEveryT
 	[self cleanUpTempFile];
 }
 
-- (void)callAPIMethodWithGET:(NSString *)inMethodName
-					inDomain:(NSString *)inDomainName
+- (void)callAPIActionWithGET:(NSString *)inMethodName
+				  controller:(NSString *)inDomainName
 				   arguments:(NSDictionary *)inArguments
 			  authentication:(BOOL)inAuthentication
 {
@@ -140,7 +140,7 @@ NSString *const OEEveryTrailAPIRequestErrorDomain = @"com.houdah.ObjectiveEveryT
     }
     
 	if (inAuthentication  && ([context userId] == nil)) {
-		SEL mySelector = @selector(callAPIMethodWithGET:inDomain:arguments:authentication:);
+		SEL mySelector = @selector(callAPIActionWithGET:controller:arguments:authentication:);
 		NSMethodSignature *mySignature = [[self class] instanceMethodSignatureForSelector:mySelector];
 		NSInvocation *myInvocation = [NSInvocation invocationWithMethodSignature:mySignature];
 		NSNumber *myAuthentication = [NSNumber numberWithBool:inAuthentication];
@@ -201,8 +201,8 @@ NSString *const OEEveryTrailAPIRequestErrorDomain = @"com.houdah.ObjectiveEveryT
 	}
 }
 
-- (void)callAPIMethodWithPOST:(NSString *)inMethodName
-					 inDomain:(NSString *)inDomainName
+- (void)callAPIActionWithPOST:(NSString *)inMethodName
+				   controller:(NSString *)inDomainName
 					arguments:(NSDictionary *)inArguments
 			   authentication:(BOOL)inAuthentication
 {
@@ -219,7 +219,7 @@ NSString *const OEEveryTrailAPIRequestErrorDomain = @"com.houdah.ObjectiveEveryT
     }
     
 	if (inAuthentication && ([context userId] == nil)) {
-		SEL mySelector = @selector(callAPIMethodWithPOST:inDomain:arguments:authentication:);
+		SEL mySelector = @selector(callAPIActionWithPOST:controller:arguments:authentication:);
 		NSMethodSignature *mySignature = [[self class] instanceMethodSignatureForSelector:mySelector];
 		NSInvocation *myInvocation = [NSInvocation invocationWithMethodSignature:mySignature];
 		NSNumber *myAuthentication = [NSNumber numberWithBool:inAuthentication];
@@ -435,43 +435,12 @@ NSString *const OEEveryTrailAPIRequestErrorDomain = @"com.houdah.ObjectiveEveryT
 {
 	NSLog(@"%@", [[[NSString alloc] initWithData:[request receivedData] encoding:NSUTF8StringEncoding] autorelease]);
 
-	NSDictionary *responseDictionary = [OEXMLMapper dictionaryMappedFromXMLData:[request receivedData]];	
-	NSArray *errorsElement = [responseDictionary valueForKeyPath:@"errors"];
+	NSDictionary *responseDictionary = [OEXMLMapper dictionaryMappedFromXMLData:[request receivedData]];
+	NSDictionary *rootElement = (NSDictionary*)[responseDictionary oeRootElement];
+
+	NSError *error = nil;
 	
-	if (([responseDictionary count] == 0) || ([errorsElement count] > 0)) {
-		NSError *error = nil;
-		
-		if ([responseDictionary count] > 0) {
-			NSArray *errors = [responseDictionary valueForKeyPath:@"errors.error._text"];
-			NSString *message = NSLocalizedString(@"Unknown EveryTrail error",
-												  @"Unknown EveryTrail error");
-			int errorCode = OEEveryTrailAPIRequestUnknownError;
-			
-			if ([errors count] > 0) {
-				NSString *errorString = [errors objectAtIndex:0];
-				int errorValue = [errorString intValue];
-				
-				if ((errorValue != 0) && (errorValue != INT_MIN) && (errorValue != INT_MAX)) {
-					errorCode = errorValue;
-				}
-			}
-			
-			if (errorCode == 11) {
-				message = NSLocalizedString(@"Incorrect user name or password",
-											@"Incorrect user name or password");
-			}
-			
-			error = [NSError errorWithDomain:OEEveryTrailAPIReturnedErrorDomain
-										code:errorCode
-									userInfo:[NSDictionary dictionaryWithObjectsAndKeys:message, NSLocalizedFailureReasonErrorKey, nil]];				
-		}
-		
-		if (error == nil) {
-			error = [NSError errorWithDomain:OEEveryTrailAPIRequestErrorDomain
-										code:OEEveryTrailAPIRequestFaultyXMLResponseError
-									userInfo:nil];
-		}
-		
+	if ([rootElement oeRootHasError:&error]) {
 		if ([delegate respondsToSelector:@selector(everyTrailAPIRequest:didFailWithError:)]) {
 			[delegate everyTrailAPIRequest:self didFailWithError:error];        
 		}
@@ -483,7 +452,7 @@ NSString *const OEEveryTrailAPIRequestErrorDomain = @"com.houdah.ObjectiveEveryT
 	
     if ([delegate respondsToSelector:@selector(everyTrailAPIRequest:didCompleteWithResponse:)]) {
 		[delegate everyTrailAPIRequest:self didCompleteWithResponse:responseDictionary];
-    }    
+    } 
 }
 
 - (void)httpRequest:(LFHTTPRequest *)request didFailWithError:(NSString *)error

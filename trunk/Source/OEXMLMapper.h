@@ -42,13 +42,16 @@ extern NSString *OEXMLTextContentKey;
 @end
 
 @interface NSDictionary (OEXMLMapperExtension)
-- (NSDictionary *)attributes;
-- (NSString *)textContent;
-- (NSObject *)rootElement;
+- (NSDictionary *)oeAttributes;
+- (NSString *)oeTextContent;
+- (NSObject *)oeRootElement;
 
 #if MAC_OS_X_VERSION_MIN_REQUIRED > MAC_OS_X_VERSION_10_4
-@property (nonatomic, readonly) NSDictionary *attributes;
-@property (nonatomic, readonly) NSString *textContent;
-@property (nonatomic, readonly) NSObject *rootElement;
+@property (nonatomic, readonly) NSDictionary *oeAttributes;
+@property (nonatomic, readonly) NSString *oeTextContent;
+@property (nonatomic, readonly) NSObject *oeRootElement;
 #endif
+
+- (BOOL)oeRootHasError:(NSError**)outError;
+
 @end
