@@ -36,6 +36,10 @@
 @class OEEveryTrailAPIContext;
 @protocol OEEveryTrailAPIRequestDelegate;
 
+typedef enum {
+	OEEveryTrailPrivacyPublic = 0,
+	OEEveryTrailPrivacyPrivate = 1
+} OEEveryTrailPrivacy;
 
 extern NSString *const OEEveryTrailAPIReturnedErrorDomain;
 extern NSString *const OEEveryTrailAPIRequestErrorDomain;
@@ -60,9 +64,9 @@ enum {
 - (void)everyTrailAPIRequest:(OEEveryTrailAPIRequest *)inRequest didCompleteWithResponse:(NSDictionary *)inResponseDictionary;
 - (void)everyTrailAPIRequest:(OEEveryTrailAPIRequest *)inRequest didFailWithError:(NSError *)inError;
 #if MAC_OS_X_VERSION_MAX_ALLOWED > MAC_OS_X_VERSION_10_4                
-- (void)everyTrailAPIRequest:(OEEveryTrailAPIRequest *)inRequest imageUploadSentBytes:(NSUInteger)inSentBytes totalBytes:(NSUInteger)inTotalBytes;
+- (void)everyTrailAPIRequest:(OEEveryTrailAPIRequest *)inRequest uploadSentBytes:(NSUInteger)inSentBytes totalBytes:(NSUInteger)inTotalBytes;
 #else
-- (void)everyTrailAPIRequest:(OEEveryTrailAPIRequest *)inRequest imageUploadSentBytes:(unsigned int)inSentBytes totalBytes:(unsigned int)inTotalBytes;
+- (void)everyTrailAPIRequest:(OEEveryTrailAPIRequest *)inRequest uploadSentBytes:(unsigned int)inSentBytes totalBytes:(unsigned int)inTotalBytes;
 #endif
 @end
 
@@ -109,7 +113,12 @@ typedef id OEEveryTrailAPIRequestDelegateType;
 					arguments:(NSDictionary *)inArguments
 			   authentication:(BOOL)inAuthentication;
 
-// image upload—we use NSInputStream here because we want to have flexibity; with this you can upload either a file or NSData from NSImage
+// track log upload — We use NSInputStream here because we want to have flexibity; with this you can upload either a file or NSData
+- (void)uploadGPXStream:(NSInputStream *)inGPXStream
+				 append:(BOOL)inAppendFlag
+			  arguments:(NSDictionary *)inArguments;
+
+// image upload — We use NSInputStream here because we want to have flexibity; with this you can upload either a file or NSData from NSImage
 - (void)uploadJPEGImageStream:(NSInputStream *)inImageStream
 			suggestedFilename:(NSString *)inFilename
 					arguments:(NSDictionary *)inArguments;

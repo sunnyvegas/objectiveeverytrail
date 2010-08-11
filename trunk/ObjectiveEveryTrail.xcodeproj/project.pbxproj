@@ -284,7 +284,14 @@
 			isa = PBXProject;
 			buildConfigurationList = 6ABF72D40F939BB800B9179E /* Build configuration list for PBXProject "ObjectiveEveryTrail" */;
 			compatibilityVersion = "Xcode 2.4";
+			developmentRegion = English;
 			hasScannedForEncodings = 0;
+			knownRegions = (
+				English,
+				Japanese,
+				French,
+				German,
+			);
 			mainGroup = 6ABF72CF0F939BB800B9179E;
 			productRefGroup = 6ABF72E70F939BE600B9179E /* Products */;
 			projectDirPath = "";

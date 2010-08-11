@@ -217,7 +217,7 @@ NSString *OEXMLTextContentKey = @"_text";
 											  userInfo:nil];
 		}
 		
-		if ((toDelegateError != nil) && (*outError != nil)) {
+		if ((toDelegateError != nil) && (outError != NULL)) {
 			*outError = toDelegateError;
 		}
 				

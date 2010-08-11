@@ -81,6 +81,7 @@ extern NSString *const OEEveryTrailFullSize;
 
 @property (nonatomic, retain) NSString *userName;
 @property (nonatomic, retain) NSString *password;
+@property (nonatomic, retain) NSString *userId;
 
 @property (nonatomic, retain) NSString *apiEndpoint;
 @property (nonatomic, retain) NSString *authEndpoint;
