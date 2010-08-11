@@ -278,6 +278,164 @@ NSString *const OEEveryTrailAPIRequestErrorDomain = @"com.houdah.ObjectiveEveryT
 	}
 }	
 
+- (void)uploadGPXStream:(NSInputStream *)inGPXStream
+				 append:(BOOL)inAppendFlag
+			  arguments:(NSDictionary *)inArguments
+{
+    if ([self isRunning]) {
+		if ([delegate respondsToSelector:@selector(everyTrailAPIRequest:didFailWithError:)]) {
+			NSError *error = [NSError errorWithDomain:OEEveryTrailAPIRequestErrorDomain
+												 code:OEEveryTrailAPIRequestConnectionError
+											 userInfo:[NSDictionary dictionaryWithObjectsAndKeys:@"Concurrent requests not supported", NSLocalizedFailureReasonErrorKey, nil]];
+			
+			[delegate everyTrailAPIRequest:self didFailWithError:error];        
+		}
+		
+		return;
+    }
+    
+	if ([context userId] == nil) {
+		SEL mySelector = @selector(uploadGPXStream:arguments:);
+		NSMethodSignature *mySignature = [[self class] instanceMethodSignatureForSelector:mySelector];
+		NSInvocation *myInvocation = [NSInvocation invocationWithMethodSignature:mySignature];
+		NSNumber *appendFlagNumber = [NSNumber numberWithBool:inAppendFlag];
+		
+		[myInvocation retainArguments];
+		[myInvocation setTarget:self];
+		[myInvocation setSelector:mySelector];
+		[myInvocation setArgument:&inGPXStream atIndex:2];
+		[myInvocation setArgument:&appendFlagNumber atIndex:3];
+		[myInvocation setArgument:&inArguments atIndex:4];
+		
+		invocation = [myInvocation retain];
+		
+		[context requestUserId:self];
+		
+		return;
+	}
+	
+    // get the api_sig
+	NSError *error = nil;
+    NSArray *argComponents = [[self context] signedArgumentComponentsFromArguments:(inArguments ? inArguments : [NSDictionary dictionary]) 
+																	  useURIEscape:NO 
+																	authentication:YES
+																			 error:&error];
+	
+	if (error != nil) {
+		if ([delegate respondsToSelector:@selector(everyTrailAPIRequest:didFailWithError:)]) {
+			[delegate everyTrailAPIRequest:self didFailWithError:error];        
+		}
+		
+		return;
+	}
+	
+    NSString *separator = OEGenerateUUIDString();
+	NSString *mimeType = @"application/gpx+xml";
+    NSString *contentType = [NSString stringWithFormat:@"multipart/form-data; boundary=%@", separator];
+    
+    // build the multipart form
+    NSMutableString *multipartBegin = [NSMutableString string];
+    NSMutableString *multipartEnd = [NSMutableString string];
+    
+    NSEnumerator *componentEnumerator = [argComponents objectEnumerator];
+    NSArray *nextArgComponent;
+    while (nextArgComponent = [componentEnumerator nextObject]) {        
+        [multipartBegin appendFormat:@"--%@\r\nContent-Disposition: form-data; name=\"%@\"\r\n\r\n%@\r\n", separator, [nextArgComponent objectAtIndex:0], [nextArgComponent objectAtIndex:1]];
+    }
+	
+    // add filename, if nil, generate a UUID
+    [multipartBegin appendFormat:@"--%@\r\nContent-Disposition: form-data; name=\"gpx\"; filename=\"%@\"\r\n", separator, @"log.gpx"];
+    [multipartBegin appendFormat:@"Content-Type: %@\r\n\r\n", mimeType];
+	
+    [multipartEnd appendFormat:@"\r\n--%@--", separator];
+    
+    
+    // now we have everything, create a temp file for this purpose; although UUID is inferior to 
+    [self cleanUpTempFile];
+    uploadTempFilename = [[NSTemporaryDirectory() stringByAppendingString:[NSString stringWithFormat:@"%@.%@", OEEveryTrailUploadTempFilenamePrefix, OEGenerateUUIDString()]] retain];
+    
+    // create the write stream
+    NSOutputStream *outputStream = [NSOutputStream outputStreamToFileAtPath:uploadTempFilename append:NO];
+    [outputStream open];
+    
+    const char *UTF8String;
+    size_t writeLength;
+    UTF8String = [multipartBegin UTF8String];
+    writeLength = strlen(UTF8String);
+    NSAssert([outputStream write:(uint8_t *)UTF8String maxLength:writeLength] == writeLength, @"Must write multipartBegin");
+	
+    // open the input stream
+    const size_t bufferSize = 65536;
+    size_t readSize = 0;
+    uint8_t *buffer = (uint8_t *)calloc(1, bufferSize);
+    NSAssert(buffer, @"Must have enough memory for copy buffer");
+	
+    [inGPXStream open];
+    while ([inGPXStream hasBytesAvailable]) {
+        if (!(readSize = [inGPXStream read:buffer maxLength:bufferSize])) {
+            break;
+        }
+        
+        NSAssert (readSize == [outputStream write:buffer maxLength:readSize], @"Must completes the writing");
+    }
+    
+    [inGPXStream close];
+    free(buffer);
+    
+    
+    UTF8String = [multipartEnd UTF8String];
+    writeLength = strlen(UTF8String);
+    NSAssert([outputStream write:(uint8_t *)UTF8String maxLength:writeLength] == writeLength, @"Must write multipartBegin");
+    [outputStream close];
+    
+#if MAC_OS_X_VERSION_MAX_ALLOWED <= MAC_OS_X_VERSION_10_4	
+    NSDictionary *fileInfo = [[NSFileManager defaultManager] fileSystemAttributesAtPath:uploadTempFilename];
+    NSAssert(fileInfo, @"Must have upload temp file");
+#else
+    NSDictionary *fileInfo = [[NSFileManager defaultManager] attributesOfItemAtPath:uploadTempFilename error:&error];
+    NSAssert(fileInfo && !error, @"Must have upload temp file");
+#endif
+	
+    NSNumber *fileSizeNumber = [fileInfo objectForKey:NSFileSize];
+    NSUInteger fileSize = 0;
+	
+#if MAC_OS_X_VERSION_MAX_ALLOWED <= MAC_OS_X_VERSION_10_4                
+    fileSize = [fileSizeNumber intValue];
+#else
+    if ([fileSizeNumber respondsToSelector:@selector(integerValue)]) {
+        fileSize = [fileSizeNumber integerValue];                    
+    }
+    else {
+        fileSize = [fileSizeNumber intValue];                    
+    }                
+#endif
+    
+    NSInputStream *inputStream = [NSInputStream inputStreamWithFileAtPath:uploadTempFilename];
+	
+    [httpRequest setContentType:contentType];
+	
+	[[self context] enableBasicAuthentication:httpRequest];
+	
+	NSString *domainName = @"trip";
+	NSString *methodName = inAppendFlag ? @"addgpx" : @"setgpx";
+	NSString *urlString = [NSString stringWithFormat:@"%@/%@/%@", [context apiEndpoint], domainName, methodName];
+	
+	BOOL success = [httpRequest performMethod:LFHTTPRequestPOSTMethod onURL:[NSURL URLWithString:urlString] withInputStream:inputStream knownContentSize:fileSize];
+	
+	if (!success) {
+		if ([delegate respondsToSelector:@selector(everyTrailAPIRequest:didFailWithError:)]) {
+			NSError *error = [NSError errorWithDomain:OEEveryTrailAPIRequestErrorDomain
+												 code:OEEveryTrailAPIRequestConnectionError
+											 userInfo:[NSDictionary dictionaryWithObjectsAndKeys:@"Could not connect", NSLocalizedFailureReasonErrorKey, nil]];
+			
+			[delegate everyTrailAPIRequest:self didFailWithError:error];        
+		}
+		
+		return;
+	}
+}
+
+
 - (void)uploadJPEGImageStream:(NSInputStream *)inImageStream
 			suggestedFilename:(NSString *)inFilename
 					arguments:(NSDictionary *)inArguments
@@ -343,7 +501,7 @@ NSString *const OEEveryTrailAPIRequestErrorDomain = @"com.houdah.ObjectiveEveryT
     }
 	
     // add filename, if nil, generate a UUID
-    [multipartBegin appendFormat:@"--%@\r\nContent-Disposition: form-data; name=\"file\"; filename=\"%@\"\r\n", separator, [inFilename length] ? inFilename : OEGenerateUUIDString()];
+    [multipartBegin appendFormat:@"--%@\r\nContent-Disposition: form-data; name=\"data\"; filename=\"%@\"\r\n", separator, [inFilename length] ? inFilename : OEGenerateUUIDString()];
     [multipartBegin appendFormat:@"Content-Type: %@\r\n\r\n", mimeType];
 	
     [multipartEnd appendFormat:@"\r\n--%@--", separator];
@@ -415,7 +573,12 @@ NSString *const OEEveryTrailAPIRequestErrorDomain = @"com.houdah.ObjectiveEveryT
 	
 	[[self context] enableBasicAuthentication:httpRequest];
 
-	BOOL success = [httpRequest performMethod:LFHTTPRequestPOSTMethod onURL:[NSURL URLWithString:[context apiEndpoint]] withInputStream:inputStream knownContentSize:fileSize];
+	NSString *domainName = @"media";
+	NSString *methodName = @"create";
+	NSString *urlString = [NSString stringWithFormat:@"%@/%@/%@",
+						   [context apiEndpoint], domainName, methodName];
+
+	BOOL success = [httpRequest performMethod:LFHTTPRequestPOSTMethod onURL:[NSURL URLWithString:urlString] withInputStream:inputStream knownContentSize:fileSize];
 	
 	if (!success) {
 		if ([delegate respondsToSelector:@selector(everyTrailAPIRequest:didFailWithError:)]) {
@@ -433,7 +596,7 @@ NSString *const OEEveryTrailAPIRequestErrorDomain = @"com.houdah.ObjectiveEveryT
 #pragma mark LFHTTPRequest delegate methods
 - (void)httpRequestDidComplete:(LFHTTPRequest *)request
 {
-	NSLog(@"%@", [[[NSString alloc] initWithData:[request receivedData] encoding:NSUTF8StringEncoding] autorelease]);
+//	NSLog(@"%@", [[[NSString alloc] initWithData:[request receivedData] encoding:NSUTF8StringEncoding] autorelease]);
 
 	NSDictionary *responseDictionary = [OEXMLMapper dictionaryMappedFromXMLData:[request receivedData]];
 	NSDictionary *rootElement = (NSDictionary*)[responseDictionary oeRootElement];
@@ -476,8 +639,8 @@ NSString *const OEEveryTrailAPIRequestErrorDomain = @"com.houdah.ObjectiveEveryT
 
 - (void)httpRequest:(LFHTTPRequest *)request sentBytes:(NSUInteger)bytesSent total:(NSUInteger)total
 {
-    if (uploadTempFilename && [delegate respondsToSelector:@selector(everyTrailAPIRequest:imageUploadSentBytes:totalBytes:)]) {
-        [delegate everyTrailAPIRequest:self imageUploadSentBytes:bytesSent totalBytes:total];
+    if (uploadTempFilename && [delegate respondsToSelector:@selector(everyTrailAPIRequest:uploadSentBytes:totalBytes:)]) {
+        [delegate everyTrailAPIRequest:self uploadSentBytes:bytesSent totalBytes:total];
     }
 }
 

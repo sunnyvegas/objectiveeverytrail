@@ -42,8 +42,8 @@ NSString *const OEEveryTrailFullSize		= @"fullsize";
 @end
 
 
-#define kDefaultEveryTrailRESTAPIEndpoint		@"http://test.everytrail.com/api"
-#define kDefaultEveryTrailAuthEndpoint			@"http://test.everytrail.com/api/user/login"
+#define kDefaultEveryTrailRESTAPIEndpoint		@"http://beta.everytrail.com/api"
+#define kDefaultEveryTrailAuthEndpoint			@"http://beta.everytrail.com/api/user/login"
 
 
 @implementation OEEveryTrailAPIContext
@@ -197,6 +197,8 @@ NSString *const OEEveryTrailFullSize		= @"fullsize";
 		}
 	}
 	
+	[newArgs setObject:@"3" forKey:@"version"];
+
 	NSMutableArray *argArray = [NSMutableArray array];
 	NSArray *sortedArgs = [[newArgs allKeys] sortedArrayUsingSelector:@selector(compare:)];
 	NSEnumerator *argEnumerator = [sortedArgs objectEnumerator];
