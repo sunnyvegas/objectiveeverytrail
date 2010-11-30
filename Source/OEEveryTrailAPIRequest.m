@@ -143,7 +143,6 @@ NSString *const OEEveryTrailAPIRequestErrorDomain = @"com.houdah.ObjectiveEveryT
 		SEL mySelector = @selector(callAPIActionWithGET:controller:arguments:authentication:);
 		NSMethodSignature *mySignature = [[self class] instanceMethodSignatureForSelector:mySelector];
 		NSInvocation *myInvocation = [NSInvocation invocationWithMethodSignature:mySignature];
-		NSNumber *myAuthentication = [NSNumber numberWithBool:inAuthentication];
 		
 		[myInvocation retainArguments];
 		[myInvocation setTarget:self];
@@ -151,7 +150,7 @@ NSString *const OEEveryTrailAPIRequestErrorDomain = @"com.houdah.ObjectiveEveryT
 		[myInvocation setArgument:&inMethodName atIndex:2];
 		[myInvocation setArgument:&inDomainName atIndex:3];
 		[myInvocation setArgument:&inArguments atIndex:4];
-		[myInvocation setArgument:&myAuthentication atIndex:5];
+		[myInvocation setArgument:&inAuthentication atIndex:5];
 		
 		invocation = [myInvocation retain];
 		
@@ -222,7 +221,6 @@ NSString *const OEEveryTrailAPIRequestErrorDomain = @"com.houdah.ObjectiveEveryT
 		SEL mySelector = @selector(callAPIActionWithPOST:controller:arguments:authentication:);
 		NSMethodSignature *mySignature = [[self class] instanceMethodSignatureForSelector:mySelector];
 		NSInvocation *myInvocation = [NSInvocation invocationWithMethodSignature:mySignature];
-		NSNumber *myAuthentication = [NSNumber numberWithBool:inAuthentication];
 		
 		[myInvocation retainArguments];
 		[myInvocation setTarget:self];
@@ -230,7 +228,7 @@ NSString *const OEEveryTrailAPIRequestErrorDomain = @"com.houdah.ObjectiveEveryT
 		[myInvocation setArgument:&inMethodName atIndex:2];
 		[myInvocation setArgument:&inDomainName atIndex:3];
 		[myInvocation setArgument:&inArguments atIndex:4];
-		[myInvocation setArgument:&myAuthentication atIndex:5];
+		[myInvocation setArgument:&inAuthentication atIndex:5];
 		
 		invocation = [myInvocation retain];
 		
